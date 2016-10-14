@@ -47,7 +47,7 @@ bundle agent sshd_configfiles
 
       "sshd[TCPKeepAlive]"                            string => "no";          # https://cisofy.com/controls/SSH-7408/
       "sshd[UsePrivilegeSeparation]"                  string => "sandbox";     # https://cisofy.com/controls/SSH-7408/
-      "sshd[UseDNS]"                                  string => "yes";
+      "sshd[UseDNS]"                                  string => "no";
       "sshd[X11Forwarding]"                           string => "no";          # https://cisofy.com/controls/SSH-7408/
 
 
