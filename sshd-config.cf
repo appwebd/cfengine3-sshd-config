@@ -1,0 +1,78 @@
+#
+# Author  : Patricio Rojas Ortiz.
+# Date    : 2016 09 13
+# Purpose : Set service configuration ssh as recommended by some websites.
+#           https://cisofy.com/lynis-controls/ssh/    
+
+body common control {
+        version         => "1.0";
+        inputs          => { "$(sys.libdir)/stdlib.cf" };
+        bundlesequence  => { "sshd_configfiles" };
+}
+  
+bundle agent sshd_configfiles
+{
+
+  vars:
+      # Files to edit
+
+      "files[sshd]"   string => "/etc/ssh/sshd_config";
+
+      # SSHD configuration to set
+
+      "sshd[Protocol]"                                string => "2";
+
+      "sshd[AllowUsers]"                              string => "appweb7";     # Set your user account 
+      "sshd[AllowGroups]"                             string => "appweb7";     # Set your user account
+
+      "sshd[AllowAgentForwarding]"                    string => "no";          # https://cisofy.com/controls/SSH-7408/
+      "sshd[AllowTcpForwarding]"                      string => "no";          # https://cisofy.com/controls/SSH-7408/
+      "sshd[Banner]"                                  string => "/etc/issue";
+
+      "sshd[ClientAliveInterval]"                     string => "300";
+      "sshd[ClientAliveCountMax]"                     string => "2";           # https://cisofy.com/controls/SSH-7408/
+      "sshd[Compression]"                             string => "no";          # https://cisofy.com/controls/SSH-7408/
+      "sshd[HostbasedAuthentication]"                 string => "no";
+
+      "sshd[IgnoreRhosts]"                            string => "yes";
+      "sshd[LogLevel]"                                string => "VERBOSE";     # https://cisofy.com/controls/SSH-7408/
+      "sshd[MaxAuthTries]"                            string => "1";           # https://cisofy.com/controls/SSH-7408/             
+      "sshd[MaxSessions]"                             string => "2";           # https://cisofy.com/controls/SSH-7408/
+      "sshd[PermitEmptyPasswords]"                    string => "no";
+      "sshd[PubkeyAuthentication]"                    string => "yes";
+      "sshd[PasswordAuthentication]"                  string => "no";
+      "sshd[PermitRootLogin]"                         string => "no";          # https://cisofy.com/controls/SSH-7412/
+      "sshd[Port]"                                    string => "22";          # https://cisofy.com/controls/SSH-7408/
+      "sshd[StrictModes]"                             string => "yes";         # https://cisofy.com/controls/SSH-7416/
+
+      "sshd[TCPKeepAlive]"                            string => "no";          # https://cisofy.com/controls/SSH-7408/
+      "sshd[UsePrivilegeSeparation]"                  string => "sandbox";     # https://cisofy.com/controls/SSH-7408/
+      "sshd[UseDNS]"                                  string => "yes";
+      "sshd[X11Forwarding]"                           string => "no";          # https://cisofy.com/controls/SSH-7408/
+
+
+  methods:
+      "sshd"    usebundle => edit_sshd;
+}
+
+bundle agent edit_sshd
+{
+  files:
+      "$(sshd_configfiles.files[sshd])"
+        handle => "edit_sshd",
+        comment => "Set desired sshd_config parameters",
+        edit_line => set_config_values("sshd_configfiles.sshd"),
+        classes => if_repaired("restart_sshd");
+
+  commands:
+    restart_sshd.!no_restarts::
+      "/etc/init.d/ssh reload"
+        handle => "ssh_restart",
+        comment => "Restart sshd if the configuration file was modified";
+
+  reports:
+
+    any::
+
+      "cfengine sshd-config.cf ok reviwed!";
+}
